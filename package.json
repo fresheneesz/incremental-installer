@@ -1,5 +1,5 @@
 {"name":"incremental-installer",
- "version":"0.0.1",
+ "version":"0.0.2",
  "main":"install.js",
  "description": "A module that helps create scripts that install non-npm dependencies for a project. Allows for smoothly and incremental adding dependencies during development",
  "keywords": ["installer", "install", "package", "dependencies"],
