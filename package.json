@@ -1,13 +1,13 @@
 {"name":"incremental-installer",
- "version":"0.0.2",
+ "version":"0.0.3",
  "main":"install.js",
  "description": "A module that helps create scripts that install non-npm dependencies for a project. Allows for smoothly and incremental adding dependencies during development",
  "keywords": ["installer", "install", "package", "dependencies"],
  "dependencies":{
-    "async-future": "0.1.12"
+    "async-future": "1.0.2"
  },
  "devDependencies": {
-     "deadunit": "2.0.9"
+     "deadunit": "5.1.5"
  },
  "repository": {
    "type": "git",

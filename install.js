@@ -33,8 +33,23 @@ module.exports = function() {
 
                 if(state <= n) {
                     var returnValue = v() // return value should be a future (or undefined)
-                    state = n+1
-                    return returnValue
+
+                    var recordNewState = function() {
+                        state = n+1
+                        if(state !== undefined) { // only if state was used
+                            // save state
+                            makePath(path.dirname(stateFile))
+                            fs.writeFileSync(stateFile, state)
+                        }
+                    }
+
+                    if(returnValue !== undefined) {
+                        return returnValue.then(function(){
+                            recordNewState()
+                        })
+                    } else {
+                        recordNewState()
+                    }
                 }
             } else if(typeof(v) === 'object') {
                 return v.check().then(function(needsToRun) {
@@ -48,17 +63,7 @@ module.exports = function() {
         })
     })
 
-    var done = lastFuture.then(function() {
-        if(state !== undefined) { // only if state was used
-            // save state
-            makePath(path.dirname(stateFile))
-            fs.writeFileSync(stateFile, state)
-        }
-    })
-
-    done.done() // ensure errors are visible
-
-    return done
+    return lastFuture
 }
 
 module.exports.Future = Future

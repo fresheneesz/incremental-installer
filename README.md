@@ -2,7 +2,7 @@
 `incremental-installer`
 =====
 
-A module that helps create scripts that install non-npm dependencies for a project. Allows for smoothly and incremental adding dependencies during development.
+A module that helps create scripts that install non-npm dependencies for a project. Allows for smoothly and incrementally adding dependencies during development.
 
 During development, multiple engineers on a project will need to add dependencies and configuration for the project - things like database schema changes, version upgrades, and additions to the technology stack. This library helps you create scripts that can be run quickly on every pull from the repository to ensure all the correct configuration is in place. The installers created with this will be idempotent - meaning you can run them multiple times without duplicate installation happening. The installer will only install pieces that have not yet been installed.
 
@@ -29,7 +29,7 @@ install('install.state', [
             run('yum install -y nano')
         },
         function(args) { // runs second, only if the state is less than 1
-			run('yum install -y nano')
+			run('yum install -y locate')
         },
         {  install: function(args) { // runs third, only if the 'check' function returns true
               run('yum install -y git')
@@ -86,10 +86,17 @@ var install = require('incremental-installer')
 Recommendations
 ======
 
+## Fibers/future
+
+I recommend using node-fibers for concurrency. This library uses [async-future](https://github.com/fresheneesz/asyncFuture) because requiring multiple versions of node-fibers isn't safe (causes bugs).
 
 ## incremental-installer-maker
 
 [incremental-installer-maker](https://github.com/fresheneesz/incremental-installer-maker) is an extension of this idea that allows you to create a stand-alone script that packages any number of dependencies, and automatically installs node.js if it isn't currently installed on the machine. In the future, that related project will  use incremental-installer to do what it does. But if you want something that will build a stand-alone installer, [incremental-installer-maker](https://github.com/fresheneesz/incremental-installer-maker) is for you.
+
+Todo
+====
+* Provide a way to more conveniently use node-fibers/futures
 
 How to Contribute!
 ============
@@ -116,6 +123,7 @@ How to submit pull requests:
 Change Log
 =========
 
+* 0.0.3 - fixing state saving in error conditions and updating async-future
 * 0.0.1 - first!
 
 License

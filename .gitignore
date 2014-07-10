@@ -3,3 +3,5 @@
 *.iml
 npm-debug.log
 test/install.state
+test/install.state2
+test/install.state3
