@@ -97,7 +97,7 @@ Unit.test(function(t) {
     this.test('errors', function() {
 
         this.test('synchronous error', function(t) {
-            this.count(4)
+            this.count(5)
 
             this.ok(!fs.existsSync(stateFile2))
 
@@ -115,7 +115,18 @@ Unit.test(function(t) {
                 t.ok(e.message === 'failure')
             }).finally(function(){
                 t.eq(fs.readFileSync(stateFile2).toString(), '1')
+            }).then(function() {
+                return install(stateFile2, [
+                    function() {
+                        t.ok(false) // this one already ran successfully up there ^
+                    },
+                    function() {
+                        t.ok(true)
+                    }
+                ])
             }).done()
+
+
         })
 
         this.test('future error', function(t) {

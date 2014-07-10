@@ -68,11 +68,15 @@ module.exports = function() {
 
 module.exports.Future = Future
 
-var run = module.exports.run = function (command, printToConsole){
+var run = module.exports.run = function (command, printToConsole, options){
+    if(options === undefined) options = {}
     if(printToConsole === undefined) printToConsole = true
 
     var stdout = '', stderr = '', stdtogether = ''
     var childProcess = child.exec(command)
+    if(options.unref) {
+        childProcess.unref() //
+    }
 
     var aChild = futureChild(childProcess)
     aChild.stdout.on('data', function(data){

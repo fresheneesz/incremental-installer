@@ -77,9 +77,10 @@ var install = require('incremental-installer')
          * If the function returns a future (*see [async-future](https://github.com/fresheneesz/asyncFuture)*), the next function will wait until that future resolves before running the next function.
        * `check()` - A function that returns Future(true) (*see [async-future](https://github.com/fresheneesz/asyncFuture)*) if the `install` function of the object should be run.
 
-`makeInstaller.run(command, printToConsole)` - runs a system command, displays the output on the console, and returns when the command is done. Throws an exception if the command returns an exit code other than `0`.
+`makeInstaller.run(command, printToConsole, options)` - runs a system command, displays the output on the console, and returns when the command is done. Throws an exception if the command returns an exit code other than `0`.
  * `command` - a string of the command to run
  * `printToConsole` - *(Optional- default true)* If true, output is displayed to the console. If false, its not.
+ * `options` - has only one option at the moment: `unref`, which causes the current process to not wait for the child process to finish before exiting
 
 `makeInstaller.Future` - a reference to [async-future](https://github.com/fresheneesz/asyncFuture) for convenience (e.g. to use in `options.scripts[n].check` above)
 
@@ -123,6 +124,7 @@ How to submit pull requests:
 Change Log
 =========
 
+* 0.1.0 - adding unref option to run
 * 0.0.3 - fixing state saving in error conditions and updating async-future
 * 0.0.1 - first!
 
