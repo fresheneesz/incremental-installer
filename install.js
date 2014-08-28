@@ -26,16 +26,19 @@ module.exports = function() {
     }
 
     var lastFuture = Future(true)
-    scripts.forEach(function(v, n) {
+    var numberOfPrecedingFunctionTasks = 0
+    scripts.forEach(function(v) {
         lastFuture = lastFuture.then(function() {
             if(typeof(v) === 'function') {
                 getState()
 
-                if(state <= n) {
+                var result;
+                if(state <= numberOfPrecedingFunctionTasks) {
                     var returnValue = v() // return value should be a future (or undefined)
 
+                    var nextState = numberOfPrecedingFunctionTasks+1
                     var recordNewState = function() {
-                        state = n+1
+                        state = nextState
                         if(state !== undefined) { // only if state was used
                             // save state
                             makePath(path.dirname(stateFile))
@@ -44,13 +47,17 @@ module.exports = function() {
                     }
 
                     if(returnValue !== undefined) {
-                        return returnValue.then(function(){
+                        result = returnValue.then(function(){
                             recordNewState()
                         })
                     } else {
                         recordNewState()
                     }
                 }
+
+                numberOfPrecedingFunctionTasks++
+                return result
+
             } else if(typeof(v) === 'object') {
                 return v.check().then(function(needsToRun) {
                     if(needsToRun) {

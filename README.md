@@ -68,14 +68,17 @@ var install = require('incremental-installer')
 
  * `stateFilePath` - (*Optional*) The path of the file where the state file will be stored
    * The full path to the state-file location will be created if it doesn't already exist.
- * `installFunctions` - A list of functions to run in order. In maintaining this installer script, it is important that the order of these functions remains the same, and new functions are only added at the end. This is because the installation state of the machine is recorded as the number of functions run. If the order is changed, the next time the installer is run on a partially installed machine, already-ran functions may run, and necessary functions may not run.
-   * Each element in the array can either be:
-     * A function. In this case, the function is run if the stateFile contains a number greater-than-or-equal-to the index of the element.
+ * `installFunctions` - A list of tasks to run in order. In maintaining this installer script, it is important that the order of these tasks remains the same. If the order is changed, the next time the installer is run on a partially installed machine, already-ran functions may run, and necessary functions may not run.
+   * Each element (task) in the array can either be:
+     * A function. In this case, the function is run if the stateFile contains a number greater-than-or-equal-to the number of function-tasks that preceded it (ie if you have 2 function-tasks, then 1 object-task, then another 2 function-tasks, the task with index 1 will be run if the state is 1 or less and the task with index 3 will be run if the state is 2 or less).
        * If a function returns a future (*see [async-future](https://github.com/fresheneesz/asyncFuture)*), the next function will wait until that future resolves before running the next function.
-     * An object with the following properties:
-       * `install()` - A function.
-         * If the function returns a future (*see [async-future](https://github.com/fresheneesz/asyncFuture)*), the next function will wait until that future resolves before running the next function.
-       * `check()` - A function that returns Future(true) (*see [async-future](https://github.com/fresheneesz/asyncFuture)*) if the `install` function of the object should be run.
+       * It is *not* safe to insert a new function-tasks anywhere but at the end of the list. This is because the installation state of the machine is recorded as the number of functions run. If new function-tasks
+     * An object. The object's `check` function will be run on every install (regardless of state), and if it returns `Future(true)`the `install` function will be run.
+       * It *is* safe to insert a new object-task in the middle of an installation procedure, because this task doesn't change the 'state' of the installation.
+       * The object should have the following properties:
+         * `check()` - A function that returns Future(true) (*see [async-future](https://github.com/fresheneesz/asyncFuture)*) if the `install` function of the object should be run.
+         * `install()` - A function.
+           * If the function returns a future (*see [async-future](https://github.com/fresheneesz/asyncFuture)*), the next function will wait until that future resolves before running the next function.
 
 `makeInstaller.run(command, printToConsole, options)` - runs a system command, displays the output on the console, and returns when the command is done. Throws an exception if the command returns an exit code other than `0`.
  * `command` - a string of the command to run
@@ -124,6 +127,7 @@ How to submit pull requests:
 Change Log
 =========
 
+* 1.0.0 - BREAKING CHANGE - making it so that object-tasks can be inserted anywhere in the task list without compromising state.
 * 0.1.0 - adding unref option to run
 * 0.0.3 - fixing state saving in error conditions and updating async-future
 * 0.0.1 - first!

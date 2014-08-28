@@ -2,6 +2,7 @@
 /.idea
 *.iml
 npm-debug.log
-test/install.state
+test/install.state0
+test/install.state1
 test/install.state2
 test/install.state3

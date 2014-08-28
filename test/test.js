@@ -1,28 +1,32 @@
 var fs = require('fs')
 var Unit = require('deadunit')
 
-var stateFile = __dirname+'/install.state'
-var stateFile2 = __dirname+'/install.state2'
-var stateFile3 = __dirname+'/install.state3'
-if(fs.existsSync(stateFile)) fs.unlinkSync(stateFile)
-if(fs.existsSync(stateFile2)) fs.unlinkSync(stateFile2)
-if(fs.existsSync(stateFile3)) fs.unlinkSync(stateFile3)
+var stateFiles = []
+initStateFiles(4)
+
+function initStateFiles(number) {
+    for(var n=0; n<number; n++) {
+        var stateFile = __dirname+'/install.state'+n
+        if(fs.existsSync(stateFile)) fs.unlinkSync(stateFile)
+        stateFiles.push(stateFile)
+    }
+}
 
 Unit.test(function(t) {
     var install = require('../install')
     var Future = install.Future
-
-    this.count(2)
 
 
        //*
     this.test('successful run', function(t) {
         this.count(4)
 
-        this.ok(fs.existsSync(stateFile) === false)
+        this.ok(fs.existsSync(stateFiles[0]) === false)
 
         var first;
         this.test("First run", function(t) {
+            this.count(5)
+
             var event = sequence(function(e) {
                 t.eq(e, 'first')
             }, function(e) {
@@ -39,7 +43,7 @@ Unit.test(function(t) {
         })
 
         first.then(function() {
-            t.ok(fs.existsSync(stateFile) === true)
+            t.ok(fs.existsSync(stateFiles[0]) === true)
 
             var second;
             t.test("Second run", function(t) {
@@ -55,21 +59,21 @@ Unit.test(function(t) {
             })
 
             return second.then(function() {
-                fs.unlinkSync(stateFile)
+                fs.unlinkSync(stateFiles[0])
             })
         }).done()
 
 
 
         function runInstaller(event) {
-            return install(stateFile, [
+            return install(stateFiles[0], [
                 function() {
                     event('first') // first one ran
                 },
                 {   check: function() {
-                    event('secondCheck') // second check ran
-                    return Future(true)
-                },
+                        event('secondCheck') // second check ran
+                        return Future(true)
+                    },
                     install: function() {
                         event('second') // second ran
                     }
@@ -94,14 +98,60 @@ Unit.test(function(t) {
         }
     })
 
+    this.test("object-tasks can be safely inserted in the middle", function(t) {
+        this.count(5)
+
+        var event = sequence(function(e) {
+            t.eq(e, 'first')
+        }, function(e) {
+            t.eq(e, 'second')
+        }, function(e) {
+            t.eq(e, 'third')
+        }, function(e) {
+            t.eq(e, 'fourth')
+        }, function(e) {
+            t.eq(e, 'fifth')
+        })
+
+        install(stateFiles[3], [
+            function() {
+                event('first') // first one ran
+            },
+            function() {
+                event('second') // first one ran
+            }
+        ])
+
+
+        install(stateFiles[3], [
+            function() {
+                t.ok(false) // shouldn't be run
+            },
+            {   check: function() {
+                    event('third')
+                    return Future(true)
+                },
+                install: function() {
+                    event('fourth')
+                }
+            },
+            function() {
+                t.ok(false) // shouldn't be run
+            },
+            function() {
+                event('fifth')
+            }
+        ])
+    })
+
     this.test('errors', function() {
 
         this.test('synchronous error', function(t) {
             this.count(5)
 
-            this.ok(!fs.existsSync(stateFile2))
+            this.ok(!fs.existsSync(stateFiles[1]))
 
-            install(stateFile2, [
+            install(stateFiles[1], [
                 function() {
                     t.ok(true) // first one ran
                 },
@@ -114,9 +164,9 @@ Unit.test(function(t) {
             ]).catch(function(e){
                 t.ok(e.message === 'failure')
             }).finally(function(){
-                t.eq(fs.readFileSync(stateFile2).toString(), '1')
+                t.eq(fs.readFileSync(stateFiles[1]).toString(), '1')
             }).then(function() {
-                return install(stateFile2, [
+                return install(stateFiles[1], [
                     function() {
                         t.ok(false) // this one already ran successfully up there ^
                     },
@@ -132,9 +182,9 @@ Unit.test(function(t) {
         this.test('future error', function(t) {
             this.count(4)
 
-            this.ok(!fs.existsSync(stateFile3))
+            this.ok(!fs.existsSync(stateFiles[2]))
 
-            install(stateFile3, [
+            install(stateFiles[2], [
                 function() {
                     t.ok(true) // first one ran
                 },
@@ -151,7 +201,7 @@ Unit.test(function(t) {
             ]).catch(function(e){
                 t.ok(e.message === "async failure")
             }).finally(function(){
-                t.eq(fs.readFileSync(stateFile3).toString(), '1')
+                t.eq(fs.readFileSync(stateFiles[2]).toString(), '1')
             }).done()
         })
     })
@@ -167,7 +217,7 @@ function sequence() {
     return function() {
         n++
         if(n>=fns.length)
-            throw new Error("Unexpected call: "+n)
+            throw new Error("Unexpected call "+n+": "+Array.prototype.slice.call(arguments,0))
         // else
         fns[n].apply(this,arguments)
     }
