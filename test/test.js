@@ -144,6 +144,45 @@ Unit.test(function(t) {
         ])
     })
 
+    this.test("state read/write functions", function(t) {
+        this.count(9)
+
+        var event = sequence(function(e) {
+            t.eq(e, 'third')
+        }, function(e, state) {
+            t.eq(e, 'write')
+            t.eq(state, 3)
+        }, function(e) {
+            t.eq(e, 'fourth')
+        }, function(e, state) {
+            t.eq(e, 'write')
+            t.eq(state, 4)
+        }, function(e) {
+            t.eq(e, 'fifth')
+        }, function(e, state) {
+            t.eq(e, 'write')
+            t.eq(state, 5)
+        })
+
+        install({curState: 2, writeState: function(state) {event('write', state)}}, [
+            function() {
+                event('first')
+            },
+            function() {
+                event('second')
+            },
+            function() {
+                event('third')
+            },
+            function() {
+                event('fourth')
+            },
+            function() {
+                event('fifth')
+            }
+        ])
+    })
+
     this.test('errors', function() {
 
         this.test('synchronous error', function(t) {
@@ -207,7 +246,7 @@ Unit.test(function(t) {
     })
     //*/
 
-}).writeConsole()
+}).writeConsole(500)
 
 
 

@@ -10,40 +10,39 @@ module.exports = function() {
     if(arguments.length === 1) {
         var scripts = arguments[0]
     } else {
-        var stateFile = arguments[0]
+        var stateInfo = arguments[0]
         var scripts = arguments[1]
     }
 
-    var state;
-    function getState() {
-        if(state === undefined) {
-            if(fs.existsSync(stateFile)) {
-                state = parseInt(fs.readFileSync(stateFile))
-            } else {
-                state = 0
-            }
+    if(stateInfo instanceof Object) {
+        var curState = stateInfo.curState
+        var writeState = stateInfo.writeState
+    } else {
+        if(fs.existsSync(stateInfo)) {
+            var curState = parseInt(fs.readFileSync(stateInfo))
+        } else {
+            var curState = 0
+        }
+
+        var writeState = function(state) {
+            makePath(path.dirname(stateInfo))
+            fs.writeFileSync(stateInfo, state)
         }
     }
 
+    var state=curState;
     var lastFuture = Future(true)
     var numberOfPrecedingFunctionTasks = 0
     scripts.forEach(function(v) {
         lastFuture = lastFuture.then(function() {
             if(typeof(v) === 'function') {
-                getState()
-
                 var result;
                 if(state <= numberOfPrecedingFunctionTasks) {
                     var returnValue = v() // return value should be a future (or undefined)
 
-                    var nextState = numberOfPrecedingFunctionTasks+1
+                    state = numberOfPrecedingFunctionTasks+1
                     var recordNewState = function() {
-                        state = nextState
-                        if(state !== undefined) { // only if state was used
-                            // save state
-                            makePath(path.dirname(stateFile))
-                            fs.writeFileSync(stateFile, state)
-                        }
+                        writeState(state) // save state
                     }
 
                     if(returnValue !== undefined) {

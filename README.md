@@ -43,7 +43,7 @@ install('install.state', [
            }
         }
     ]
-)
+).done() // ensures that any error from the returned future are thrown
  ```
 
 Requirements
@@ -60,17 +60,29 @@ npm install incremental-installer
 
 #Usage
 
+## Steps
+
+1. **Write the installer** - Create a node.js script that uses 'incremental-installer' with a single element inside 'installFunctions' containing anything that fulfils your current needs.
+2. **Update the installer** - When you need to add more to the installation, add another function to the end of the `installFunctions` list.
+  * Running the installer will skip over the already-ran functions and only run the new one(s)
+
+## Node API
+
 ```javascript
 var install = require('incremental-installer')
 ```
 
-`install([stateFilePath,] installFunctions)` - runs install-functions that have not yet run on. Returns a future that resolves when the last function in `installFunctions` finishes and resolves.
+`install(stateFileInfo, installFunctions)` - runs install-functions that have not yet run on. Returns a future that resolves when the last function in `installFunctions` finishes and resolves.
 
- * `stateFilePath` - (*Optional*) The path of the file where the state file will be stored
-   * The full path to the state-file location will be created if it doesn't already exist.
- * `installFunctions` - A list of tasks to run in order. In maintaining this installer script, it is important that the order of these tasks remains the same. If the order is changed, the next time the installer is run on a partially installed machine, already-ran functions may run, and necessary functions may not run.
+ * `stateFilePath` - can be either:
+   * The (string) full path to the state-file location.
+   * An object with the properties:
+      * curState - a number representing the current state
+      * writeState(state) - a function that writes the state to some kind of storage
+ * `installFunctions` - A list of tasks to run in order.
    * Each element (task) in the array can either be:
-     * A function. In this case, the function is run if the stateFile contains a number greater-than-or-equal-to the number of function-tasks that preceded it (ie if you have 2 function-tasks, then 1 object-task, then another 2 function-tasks, the task with index 1 will be run if the state is 1 or less and the task with index 3 will be run if the state is 2 or less).
+     * A function. In this case, the function is run if state >= the number of function-tasks that preceded it (ie if you have 2 function-tasks, then 1 object-task, then another 2 function-tasks, the task with index 1 will be run if the state is 1 or less and the task with index 3 will be run if the state is 2 or less).
+       * In maintaining this installer script, it is important that the order of function-tasks remains the same. If the order is changed, the next time the installer is run on a partially installed machine, already-ran functions may run, and necessary functions may not run.
        * If a function returns a future (*see [async-future](https://github.com/fresheneesz/asyncFuture)*), the next function will wait until that future resolves before running the next function.
        * It is *not* safe to insert a new function-tasks anywhere but at the end of the list. This is because the installation state of the machine is recorded as the number of functions run. If new function-tasks
      * An object. The object's `check` function will be run on every install (regardless of state), and if it returns `Future(true)`the `install` function will be run.
@@ -101,6 +113,8 @@ I recommend using node-fibers for concurrency. This library uses [async-future](
 Todo
 ====
 * Provide a way to more conveniently use node-fibers/futures
+* Think of how the install state can be made to work even when two people each add a step at the same time
+   * You could probably just use a hash of the function passed to the step (make sure the hash result is unique, then use it)
 
 How to Contribute!
 ============
@@ -127,6 +141,7 @@ How to submit pull requests:
 Change Log
 =========
 
+* 1.1.0 - Adding the ability to use arbitrary functions to read and write state
 * 1.0.0 - BREAKING CHANGE - making it so that object-tasks can be inserted anywhere in the task list without compromising state.
 * 0.1.0 - adding unref option to run
 * 0.0.3 - fixing state saving in error conditions and updating async-future
